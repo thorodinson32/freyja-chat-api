@@ -1,1 +1,10 @@
-spring.application.name=freyja-chat-api
+spring:
+  application:
+    name: freyja-chat-api
+  profiles:
+    active: default
+server:
+  port: 8081
+
+openai:
+  api-key: ${OPENAI_API_KEY}

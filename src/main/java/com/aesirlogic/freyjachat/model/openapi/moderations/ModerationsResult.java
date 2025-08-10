@@ -2,9 +2,7 @@ package com.aesirlogic.freyjachat.model.openapi.moderations;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class ModerationsRequest {
-    private List<String> input;
+public class ModerationsResult {
+    private boolean flagged;
 }
