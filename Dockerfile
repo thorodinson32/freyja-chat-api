@@ -1,27 +1,23 @@
-# Use an official OpenJDK runtime as a parent image
-FROM openjdk:21-jdk-slim
-
-# Set the working directory
+############## BUILD STAGE ##############
+FROM gradle:8.7-jdk21 as builder
 WORKDIR /app
 
-# Copy Gradle wrapper and build files
-COPY gradlew build.gradle settings.gradle ./
+# Copy everything needed for build
+COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
-
-# Copy source code
 COPY src ./src
 
-# Make Gradle wrapper executable
-RUN chmod +x gradlew
+# Build the JAR (skip tests for fastest builds)
+RUN gradle bootJar --no-daemon -x test
 
-# Build the application
-RUN ./gradlew bootJar --no-daemon
 
-# Copy the built jar to the container
-RUN cp build/libs/*.jar app.jar
+############## RUNTIME STAGE ##############
+FROM eclipse-temurin:21-jdk
+WORKDIR /app
 
-# Expose port 8080
-EXPOSE 8081
+# Copy JAR from builder
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Run the application
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

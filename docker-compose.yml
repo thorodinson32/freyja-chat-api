@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  freyja-chat-api:
+    build: .
+    container_name: freyja-chat-api
+    restart: always
+    env_file:
+      - ../../infrastructure/.env
+    networks:
+      - aesir_net
+
+networks:
+  aesir_net:
+    external: true

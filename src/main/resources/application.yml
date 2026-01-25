@@ -4,7 +4,13 @@ spring:
   profiles:
     active: default
 server:
-  port: 8081
+  port: 8080
 
 openai:
   api-key: ${OPENAI_API_KEY}
+
+logging:
+  level:
+    root: INFO
+    com.aesirlogic.freyjachat: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
