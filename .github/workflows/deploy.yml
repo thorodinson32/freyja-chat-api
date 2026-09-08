@@ -1,0 +1,21 @@
+name: Deploy to Pi
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest and rebuild
+        run: |
+          cd /home/jacobmorgan1989/apps/ai-tools/freyja-chat-api
+          git pull
+          # --no-cache: this box's Docker/BuildKit cache has repeatedly served a stale COPY src
+          # layer despite real source changes (confirmed multiple times - deployed jar missing
+          # brand-new endpoints/fields after a normal `--build`). Costs ~1-1.5 extra minutes per
+          # deploy but guarantees the container actually reflects HEAD every time.
+          docker compose build --no-cache
+          docker compose up -d
+          docker compose ps
