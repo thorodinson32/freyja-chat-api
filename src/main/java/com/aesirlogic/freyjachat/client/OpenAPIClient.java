@@ -5,6 +5,7 @@ import com.aesirlogic.freyjachat.model.openapi.moderations.ModerationsResponse;
 import com.aesirlogic.freyjachat.model.openapi.responses.ResponsesRequest;
 import com.aesirlogic.freyjachat.model.openapi.responses.ResponsesResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -66,6 +67,24 @@ public class OpenAPIClient {
                     .block();
             log.debug("OpenAI response received successfully");
             return response;
+        } catch (WebClientResponseException e) {
+            log.error("OpenAI API error - Status: {}, Body: {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw e;
+        }
+    }
+
+    public JsonNode getResponsesJson(Object request) {
+        try {
+            return WebClient.builder()
+                    .baseUrl("https://api.openai.com/v1/responses")
+                    .defaultHeader("Authorization", "Bearer " + openaiApiKey)
+                    .defaultHeader("Content-Type", "application/json")
+                    .build()
+                    .post()
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
         } catch (WebClientResponseException e) {
             log.error("OpenAI API error - Status: {}, Body: {}", e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
