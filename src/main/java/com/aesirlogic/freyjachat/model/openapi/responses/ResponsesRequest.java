@@ -1,6 +1,7 @@
 package com.aesirlogic.freyjachat.model.openapi.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 
 @Data
@@ -22,10 +23,24 @@ public class ResponsesRequest {
             tc.setFormat(fc);
             return tc;
         }
+
+        public static TextConfig schema(String name, JsonNode schema, boolean strict) {
+            TextConfig tc = new TextConfig();
+            FormatConfig fc = new FormatConfig();
+            fc.setType("json_schema");
+            fc.setName(name);
+            fc.setSchema(schema);
+            fc.setStrict(strict);
+            tc.setFormat(fc);
+            return tc;
+        }
     }
 
     @Data
     public static class FormatConfig {
         private String type;
+        private String name;
+        private JsonNode schema;
+        private Boolean strict;
     }
 }

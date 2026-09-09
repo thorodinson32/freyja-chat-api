@@ -61,11 +61,14 @@ public class CompletionService {
         ResponsesRequest responsesRequest = buildResponsesRequest(request);
         ResponsesResponse responsesResponse = openAPIClient.getResponsesResult(responsesRequest);
 
-        if (responsesResponse != null && responsesResponse.getOutput() != null && !responsesResponse.getOutput().isEmpty()) {
-            var output = responsesResponse.getOutput().getFirst();
-            if (output.getContent() != null && !output.getContent().isEmpty()) {
-                return output.getContent().getFirst().getText();
-            }
+        if (responsesResponse != null && responsesResponse.getOutput() != null) {
+            return responsesResponse.getOutput().stream()
+                    .filter(output -> output.getContent() != null)
+                    .flatMap(output -> output.getContent().stream())
+                    .map(content -> content.getText())
+                    .filter(StringUtils::isNotBlank)
+                    .findFirst()
+                    .orElse(null);
         }
         return null;
     }
@@ -79,7 +82,11 @@ public class CompletionService {
             req.setInstructions(request.getSystemPrompt());
         }
 
-        if (request.isJsonMode()) {
+        if (request.getResponseSchema() != null) {
+            String schemaName = StringUtils.defaultIfBlank(request.getResponseSchemaName(), "structured_response");
+            req.setText(ResponsesRequest.TextConfig.schema(schemaName, request.getResponseSchema(),
+                    request.getStrict() == null || request.getStrict()));
+        } else if (request.isJsonMode()) {
             req.setText(ResponsesRequest.TextConfig.json());
         }
 
