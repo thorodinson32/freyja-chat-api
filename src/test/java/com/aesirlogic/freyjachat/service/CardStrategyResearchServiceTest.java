@@ -49,6 +49,7 @@ class CardStrategyResearchServiceTest {
         verify(client).getResponsesJson(body.capture());
         @SuppressWarnings("unchecked") Map<String, Object> requestBody = (Map<String, Object>) body.getValue();
         assertThat(requestBody.get("max_tool_calls")).isEqualTo(1);
+        assertThat(requestBody.get("max_output_tokens")).isEqualTo(4000);
         assertThat(requestBody.get("store")).isEqualTo(false);
         assertThat(String.valueOf(requestBody.get("input"))).contains("card-one", "card-two");
     }
