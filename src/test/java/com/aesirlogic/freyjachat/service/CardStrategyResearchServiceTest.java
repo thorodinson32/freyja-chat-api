@@ -27,7 +27,7 @@ class CardStrategyResearchServiceTest {
                 {
                   "output":[
                     {"type":"web_search_call","action":{"sources":[{"title":"Issuer rewards","url":"https://example.com/rewards"}]}},
-                    {"type":"message","content":[{"type":"output_text","text":"{\\"cards\\":[{\\"accountId\\":\\"card-one\\",\\"summary\\":\\"Best everyday card\\",\\"annualFee\\":\\"$0\\",\\"role\\":\\"PRIMARY\\",\\"benefits\\":[]}],\\"categoryRecommendations\\":[{\\"category\\":\\"DINING\\",\\"accountId\\":\\"card-one\\",\\"reward\\":\\"3x\\",\\"rationale\\":\\"Highest verified return\\"}]}"}]}
+                    {"type":"message","content":[{"type":"output_text","text":"{\\"cards\\":[{\\"accountId\\":\\"card-one\\",\\"summary\\":\\"Best everyday card\\",\\"annualFee\\":\\"$0\\",\\"role\\":\\"PRIMARY\\",\\"benefits\\":[{\\"category\\":\\"DINING\\",\\"reward\\":\\"3x\\",\\"conditions\\":\\"No activation required\\"}]}],\\"categoryRecommendations\\":[{\\"category\\":\\"DINING\\",\\"accountId\\":\\"card-one\\",\\"reward\\":\\"3x\\",\\"rationale\\":\\"Highest verified return\\"}]}"}]}
                   ],
                   "usage":{"input_tokens":100,"input_tokens_details":{"cached_tokens":10},"output_tokens":200,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":300}
                 }
@@ -52,5 +52,28 @@ class CardStrategyResearchServiceTest {
         assertThat(requestBody.get("max_output_tokens")).isEqualTo(4000);
         assertThat(requestBody.get("store")).isEqualTo(false);
         assertThat(String.valueOf(requestBody.get("input"))).contains("card-one", "card-two");
+    }
+
+    @Test
+    void discardsUnverifiedBenefitsAndRecommendationsThatAreNotBackedByBenefits() throws Exception {
+        OpenAPIClient client = mock(OpenAPIClient.class);
+        CardStrategyQuotaService quotas = mock(CardStrategyQuotaService.class);
+        when(quotas.reserve()).thenReturn(CardStrategyResearchResponse.Quota.builder().build());
+        when(client.getResponsesJson(any())).thenReturn(new ObjectMapper().readTree("""
+                {
+                  "output":[
+                    {"type":"message","content":[{"type":"output_text","text":"{\\"cards\\":[{\\"accountId\\":\\"freedom\\",\\"summary\\":\\"Current terms were unclear\\",\\"annualFee\\":\\"$0\\",\\"role\\":\\"PRIMARY\\",\\"benefits\\":[{\\"category\\":\\"GENERAL\\",\\"reward\\":\\"Not verified\\",\\"conditions\\":\\"No complete current schedule was verified\\"}]}],\\"categoryRecommendations\\":[{\\"category\\":\\"GENERAL\\",\\"accountId\\":\\"freedom\\",\\"reward\\":\\"1.5% cash back\\",\\"rationale\\":\\"Current product terms were not fully retrieved\\"}]}"}]}
+                  ]
+                }
+                """));
+        CardStrategyResearchRequest request = new CardStrategyResearchRequest();
+        CardStrategyResearchRequest.Card card = new CardStrategyResearchRequest.Card();
+        card.setAccountId("freedom"); card.setName("Chase Freedom Unlimited");
+        request.setCards(List.of(card));
+
+        CardStrategyResearchResponse result = new CardStrategyResearchService(client, quotas, new ObjectMapper(), "gpt-5.6-luna").research(request);
+
+        assertThat(result.getCards()).singleElement().satisfies(item -> assertThat(item.getBenefits()).isEmpty());
+        assertThat(result.getCategoryRecommendations()).isEmpty();
     }
 }
